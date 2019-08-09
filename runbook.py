@@ -29,8 +29,9 @@ class Runbook:
         instance.run()
     
         
-    def run(self):
+    def run(self):        
         for step in self._get_steps():
+            print()
             response = self._run_step(step)
             
             # handle positive response
@@ -38,23 +39,29 @@ class Runbook:
                 continue
             
             # handle negative response
-            if response in {"no" "n", "nope"}:
-                print("Why not?")
-                reason = input("\t\t\t~> ").strip()
+            elif response in {"no", "n", "nope"}:
+                print("\n\tWhy not?")
+                reason = input("\t~> ").strip()
                 self._write_result(step, reason, negative=True)
+            
+            else:
+                print("invalid response")
+                # TODO go back to top of this loop
             
         # TODO handle canceling input / sigtrap        
             
-            pass
+        print()
+        return None
     
     
     def _run_step(self, step:Step):
         
         # print step information
         print(step.description)
+        print()
         
         # pause for some seconds to give time to read
-        pause_time = max((len(step.description) * 0.01), 1.7)
+        pause_time = max((len(step.description) * 0.01), 1.65)
         sleep(pause_time)
         
         # ask for input
@@ -92,9 +99,9 @@ class Runbook:
 
             # use docstring if empty
             if step_description is not None:
-                step_description = textwrap.dedent(step_description)
+                step_description = textwrap.dedent(step_description).strip()
             else:
-                step_description = textwrap.dedent(method.__doc__)
+                step_description = textwrap.dedent(method.__doc__).strip()
             
             # use empty string if still empty
             if step_description is None:
@@ -103,7 +110,7 @@ class Runbook:
             # convert anything to string
             else:
                 step_description = str(step_description)
-                    
+            
             steps.append(Step(
                 name=step_name,
                 description=step_description,
@@ -122,29 +129,3 @@ class Runbook:
             file.write(result)
             file.write("\n")
              # write negative, with strikethrough
-    
-    
-
-# ----------------------------------------------------------------
-
-    
-class CustomRunbook(Runbook):
-    
-    def first_step():
-        """
-        Do ABC now.
-        """
-    
-    def second_step():
-        """
-        Do EFG then wait 1 hour.
-        """
-
-    def third_step():
-        value = "string"
-        return f"a custom {value}"
-
-
-    
-if __name__ == '__main__':
-    CustomRunbook.main()
