@@ -3,7 +3,7 @@ from runbook import Runbook
     
 class CustomRunbook(Runbook):
    
-    def first_step():
+    def first_step(self):
         """
         Do ABC now.
         """

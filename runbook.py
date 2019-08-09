@@ -31,46 +31,40 @@ class Runbook:
         
     def run(self):        
         for step in self._get_steps():
+            print("\n")
+
+            # print step information
+            print(step.description)
             print()
-            response = self._run_step(step)
             
+            # pause for some seconds to give time to read
+            pause_time = max((len(step.description) * 0.01), 1.65)
+            sleep(pause_time)
+            
+            # ask for input
+            print("\tDid you do the thing?")
+            plain_response = input("\t~> ").strip()
+            response = plain_response.lower()
+                        
             # handle positive response
             if response in {"yes", "y", "yep"}:
+                self._write_result(step, plain_response)
                 continue
             
             # handle negative response
             elif response in {"no", "n", "nope"}:
                 print("\n\tWhy not?")
                 reason = input("\t~> ").strip()
-                self._write_result(step, reason, negative=True)
+                self._write_result(step, plain_response, negative=True, reason=reason)
             
             else:
                 print("invalid response")
                 # TODO go back to top of this loop
             
         # TODO handle canceling input / sigtrap        
-            
+        
         print()
         return None
-    
-    
-    def _run_step(self, step:Step):
-        
-        # print step information
-        print(step.description)
-        print()
-        
-        # pause for some seconds to give time to read
-        pause_time = max((len(step.description) * 0.01), 1.65)
-        sleep(pause_time)
-        
-        # ask for input
-        print("\tDid you do the thing?")
-        response = input("\t~> ").strip()
-        
-        # write response to file
-        self._write_result(step, response)
-        return response.lower()
     
     
     def _get_steps(self) -> List[Step]:
@@ -118,14 +112,24 @@ class Runbook:
         
         return steps
     
-        
-    def _write_result(self, step:Step, result, negative=False):
+    # TODO if file exists offer continue from where they left off
+    
+    def _write_result(self, step:Step, result, negative=False, reason=None):
         # TODO file path
-        with open(self.file_name, "w+") as file:
-            ### first_step (01:34:45PM PDT)
-            # TODO timestamp in local timezone
+        with open(self.file_name, "a+") as file:
+            file.write(f"### ")
             
-            file.write(f"{step.name}")
-            file.write(result)
-            file.write("\n")
-             # write negative, with strikethrough
+            if negative is True:            
+                file.write(f"~~{step.name}~~")
+            else:
+                file.write(f"{step.name}")
+            
+            file.write("\n```\n")
+            file.write(step.description)
+            file.write("\n```\n")
+            file.write(f"> {result} ({datetime.now()})\n")
+            
+            if negative is True:
+                file.write(f"\n> {reason}\n")
+            
+            file.write("\n")    
