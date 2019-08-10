@@ -26,11 +26,30 @@ class Runbook:
     
     @classmethod
     def main(cls):
-        if len(sys.argv) > 1:
+        
+        if len(sys.argv) > 2:
+            print("usage: (log file path)")
+            exit(1)
+        
+        elif len(sys.argv) > 1:
             file_name = sys.argv[1]
+        
         else:
-            file_name = f"{cls.__name__.lower()}.log"
             
+            # split by capital letters and add underscore
+            pretty_class_name = re.sub(
+                string=cls.__name__,
+                pattern=r'([A-Z])',
+                repl='_\\1',
+            ).lower()
+            
+            # handles "ACustomClass" name strings
+            if pretty_class_name.startswith('_'):
+                pretty_class_name = pretty_class_name[1:]
+            
+            file_name = f"{pretty_class_name}.log"
+        
+        # set file path relative to current script working directory
         file_path = f"{os.getcwd()}/{file_name}"
         
         # TODO use optparse, sys to get sole filename as input
