@@ -8,20 +8,18 @@ class CustomRunbook(Runbook):
         Do ABC now.
         """
     
-    def gird_step(self):
-        pass
-        
+    
     def second_step():
-        """
-        Do EFG then wait 1 hour.
-        """
+        """Do EFG then wait 1 hour."""
 
-    def bthird_step():
+
+    def third_step():
         value = "string"
         return f"a custom {value}"
     
+    
     def last_step():
-        """nah"""
+        pass
 
     
 if __name__ == '__main__':
