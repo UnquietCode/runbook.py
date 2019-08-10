@@ -99,7 +99,7 @@ class Runbook:
             print()
             
             # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.095), 1.05)
+            pause_time = max((len(step.description) * 0.075), 1.05)
             sleep(pause_time)
             
             # ask for input
@@ -232,7 +232,7 @@ class Runbook:
             file.write(f"responded `{result}` at {datetime.now().strftime('%H:%M:%S')} on {datetime.now().strftime('%d/%m/%Y')}\n")
             
             # write negative response line
-            if negative is True:
+            if negative is True and reason:
                 file.write("\n")
                 file.write("Reason given:\n")
                 file.write(f"> {reason}\n")
