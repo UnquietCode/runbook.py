@@ -8,6 +8,9 @@ class CustomRunbook(Runbook):
         Do ABC now.
         """
     
+    def gird_step(self):
+        pass
+        
     def second_step():
         """
         Do EFG then wait 1 hour.

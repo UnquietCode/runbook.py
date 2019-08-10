@@ -9,7 +9,8 @@ from time import sleep
 from datetime import datetime
 
 # TODO get methods in declaration order
-
+# TODO append into the middle of the log file for new steps
+# TODO better line breaks
 
 @dataclass(frozen=True)
 class Step:
@@ -35,23 +36,42 @@ class Runbook:
             
         file_path = f"{os.getcwd()}/{file_name}"
         
-        if os.path.isfile(file_path):
-            print("reading existing file")
-            found_steps = cls._read_file(file_path)
-            print(found_steps)
-        
         # TODO use optparse, sys to get sole filename as input
         instance = cls(file_path=file_path)
         instance.run()
     
         
-    def run(self):        
+    def run(self):
+        
+        # check for existing steps
+        if os.path.isfile(self.file_path):
+            print("reading existing file")
+            existing_steps = self._read_file(self.file_path)
+            print(existing_steps)
+        else:
+            existing_steps = []
+        
+        current_existing_step = 0
+        
         for step in self._get_steps():
-            print("\n")
 
+            # handle existing steps
+            if len(existing_steps) > current_existing_step:
+                existing_step = existing_steps[current_existing_step]
+                
+                if step.name == existing_step.name:
+                    print(f"skipping already completed step '{step.name}'")
+                    current_existing_step += 1
+                    continue
+                else:
+                    print(f"found new step '{step.name}'")
+            
+            print("\n")
+            
             # print step information
-            print(step.description)
-            print()
+            if step.description:
+                print(step.description)
+                print()
             
             # pause for some seconds to give time to read
             pause_time = max((len(step.description) * 0.01), 1.6)
@@ -114,19 +134,17 @@ class Runbook:
                 
             step_description = method() # todo support methods with or without self
 
-            # use docstring if empty
             if step_description is not None:
+                step_description = str(step_description)
                 step_description = textwrap.dedent(step_description).strip()
-            else:
+            
+            # use docstring if empty
+            elif method.__doc__ is not None:
                 step_description = textwrap.dedent(method.__doc__).strip()
             
             # use empty string if still empty
-            if step_description is None:
-                step_description = ""
-                    
-            # convert anything to string
             else:
-                step_description = str(step_description)
+                step_description = ""
             
             steps.append(Step(
                 name=step_name,
@@ -136,8 +154,8 @@ class Runbook:
         return steps
     
     
-    @classmethod
-    def _read_file(cls, file_path):
+    @staticmethod
+    def _read_file(file_path):
         steps = []
         
         with open(file_path, "r+") as file:
@@ -146,13 +164,13 @@ class Runbook:
             while line:
                 if re.match(r"^### [a-zA-Z].*$", line):
                     steps.append(Step(
-                        name=line[4:],
+                        name=line[4:-1],
                         description="",
                     ))
                 
                 elif re.match(r"^### ~~[a-zA-Z].*~~$", line):
                     steps.append(Step(
-                        name=line[6:-2],
+                        name=line[6:-3],
                         description="",
                     ))
                 
