@@ -42,36 +42,38 @@ class Runbook:
         
         # check for existing steps
         if os.path.isfile(self.file_path):
-            print("reading existing file")
+            print("(reading existing file...)")
             existing_steps = self._read_file(self.file_path)
-            print(existing_steps)
         else:
             existing_steps = []
         
         current_existing_step = 0
         
         for step in self._get_steps():
+            print()
 
             # handle existing steps
             if len(existing_steps) > current_existing_step:
                 existing_step = existing_steps[current_existing_step]
                 
                 if step.name == existing_step.name:
-                    print(f"skipping already completed step '{step.name}'")
+                    print(f"(skipping already completed step '{step.name}')")
                     current_existing_step += 1
                     continue
                 else:
-                    print(f"found new step '{step.name}'")
-            
-            print("\n")
-            
+                    print(f"(found new step '{step.name}')")
+                    print()
+                        
             # print step information
             if step.description:
                 print(step.description)
-                print()
+            else:
+                print(step.name)
+            
+            print()
             
             # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.01), 1.6)
+            pause_time = max((len(step.description) * 0.01), 1.5)
             sleep(pause_time)
             
             # ask for input
@@ -104,7 +106,7 @@ class Runbook:
             elif response in {"no", "n", "nope"}:
                 return False, response, plain_response
             else:
-                print("invalid response")
+                print("\tinvalid response")
         
     
     def _get_steps(self) -> List[Step]:
@@ -199,6 +201,8 @@ class Runbook:
                 file.write("\n```\n")
                 file.write(step.description)
                 file.write("\n```\n")
+            else:
+                file.write("\n")
             
             # write generic response line
             file.write(f"responded `{result}` at {datetime.now().strftime('%H:%M:%S')} on {datetime.now().strftime('%d/%m/%Y')}\n")
