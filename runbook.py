@@ -8,9 +8,6 @@ from dataclasses import dataclass
 from time import sleep
 from datetime import datetime
 
-# TODO get methods in declaration order
-# TODO append into the middle of the log file for new steps
-# TODO better line breaks
 
 @dataclass(frozen=True)
 class Step:
@@ -111,7 +108,14 @@ class Runbook:
         
     
     def _get_steps(self) -> List[Step]:
+        
+        # get all methods in the class
         methods = inspect.getmembers(self, predicate=inspect.ismethod)
+        
+        # sort methods by declaration order
+        methods = sorted(methods, key=lambda _: _[1].__func__.__code__.co_firstlineno)
+        
+        # build up a list of steps
         steps:List[Step] = []
         
         for method_name, method in methods:
@@ -132,7 +136,7 @@ class Runbook:
             if len(function_signature.parameters) == 0:
                 method = getattr(type(self), method_name)
                 
-            step_description = method() # todo support methods with or without self
+            step_description = method()
 
             if step_description is not None:
                 step_description = str(step_description)
@@ -179,11 +183,10 @@ class Runbook:
         return steps
         
     
-    # TODO if file exists offer continue from where they left off
-    
     def _write_result(self, step:Step, result, negative=False, reason=None):
-        # TODO file path
         with open(self.file_path, "a+") as file:
+            
+            # write name header
             file.write(f"### ")
             
             if negative is True:
@@ -191,11 +194,16 @@ class Runbook:
             else:
                 file.write(f"{step.name}")
             
-            file.write("\n```\n")
-            file.write(step.description)
-            file.write("\n```\n")
+            # write description, if present
+            if step.description:
+                file.write("\n```\n")
+                file.write(step.description)
+                file.write("\n```\n")
+            
+            # write generic response line
             file.write(f"responded `{result}` at {datetime.now().strftime('%H:%M:%S')} on {datetime.now().strftime('%d/%m/%Y')}\n")
             
+            # write negative response line
             if negative is True:
                 file.write(f"\n> {reason}\n")
             
