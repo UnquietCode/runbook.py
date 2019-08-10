@@ -13,7 +13,7 @@ class CustomRunbook(Runbook):
         Do EFG then wait 1 hour.
         """
 
-    def third_step():
+    def bthird_step():
         value = "string"
         return f"a custom {value}"
 

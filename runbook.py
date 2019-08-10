@@ -1,10 +1,14 @@
 import re
+import os
+import sys
 import inspect
 import textwrap
 from typing import List
 from dataclasses import dataclass
 from time import sleep
 from datetime import datetime
+
+# TODO get methods in declaration order
 
 
 @dataclass(frozen=True)
@@ -15,17 +19,29 @@ class Step:
 
 class Runbook:
     
-    def __init__(self, file_name):
-        if not file_name:
-            raise Exception('file name must be provided')
+    def __init__(self, file_path):
+        if not file_path:
+            raise Exception('file path must be provided')
     
-        self.file_name = file_name
+        self.file_path = file_path
     
     
     @classmethod
     def main(cls):
+        if len(sys.argv) > 1:
+            file_name = sys.argv[1]
+        else:
+            file_name = f"{cls.__name__.lower()}.log"
+            
+        file_path = f"{os.getcwd()}/{file_name}"
+        
+        if os.path.isfile(file_path):
+            print("reading existing file")
+            found_steps = cls._read_file(file_path)
+            print(found_steps)
+        
         # TODO use optparse, sys to get sole filename as input
-        instance = cls(file_name=f"{cls.__name__.lower()}.log")
+        instance = cls(file_path=file_path)
         instance.run()
     
         
@@ -38,34 +54,41 @@ class Runbook:
             print()
             
             # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.01), 1.65)
+            pause_time = max((len(step.description) * 0.01), 1.6)
             sleep(pause_time)
             
             # ask for input
             print("\tDid you do the thing?")
-            plain_response = input("\t~> ").strip()
-            response = plain_response.lower()
-                        
-            # handle positive response
-            if response in {"yes", "y", "yep"}:
+            sentiment, response, plain_response = self._wait_for_response()
+
+            if sentiment is True:
                 self._write_result(step, plain_response)
                 continue
             
             # handle negative response
-            elif response in {"no", "n", "nope"}:
+            elif sentiment is False:
                 print("\n\tWhy not?")
                 reason = input("\t~> ").strip()
                 self._write_result(step, plain_response, negative=True, reason=reason)
-            
-            else:
-                print("invalid response")
-                # TODO go back to top of this loop
             
         # TODO handle canceling input / sigtrap        
         
         print()
         return None
     
+    
+    def _wait_for_response(self):
+        while True:
+            plain_response = input("\t~> ").strip()
+            response = plain_response.lower()
+            
+            if response in {"yes", "y", "yep"}:
+                return True, response, plain_response
+            elif response in {"no", "n", "nope"}:
+                return False, response, plain_response
+            else:
+                print("invalid response")
+        
     
     def _get_steps(self) -> List[Step]:
         methods = inspect.getmembers(self, predicate=inspect.ismethod)
@@ -112,14 +135,40 @@ class Runbook:
         
         return steps
     
+    
+    @classmethod
+    def _read_file(cls, file_path):
+        steps = []
+        
+        with open(file_path, "r+") as file:
+            line = file.readline()
+            
+            while line:
+                if re.match(r"^### [a-zA-Z].*$", line):
+                    steps.append(Step(
+                        name=line[4:],
+                        description="",
+                    ))
+                
+                elif re.match(r"^### ~~[a-zA-Z].*~~$", line):
+                    steps.append(Step(
+                        name=line[6:-2],
+                        description="",
+                    ))
+                
+                line = file.readline()
+        
+        return steps
+        
+    
     # TODO if file exists offer continue from where they left off
     
     def _write_result(self, step:Step, result, negative=False, reason=None):
         # TODO file path
-        with open(self.file_name, "a+") as file:
+        with open(self.file_path, "a+") as file:
             file.write(f"### ")
             
-            if negative is True:            
+            if negative is True:
                 file.write(f"~~{step.name}~~")
             else:
                 file.write(f"{step.name}")
@@ -127,9 +176,9 @@ class Runbook:
             file.write("\n```\n")
             file.write(step.description)
             file.write("\n```\n")
-            file.write(f"> {result} ({datetime.now()})\n")
+            file.write(f"responded `{result}` at {datetime.now().strftime('%H:%M:%S')} on {datetime.now().strftime('%d/%m/%Y')}\n")
             
             if negative is True:
                 file.write(f"\n> {reason}\n")
             
-            file.write("\n")    
+            file.write("\n")
