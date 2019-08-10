@@ -151,7 +151,7 @@ class Runbook:
                 continue
                 
             if method_name in {'run', 'main'}:
-                continue        
+                continue
 
             step_name = method_name.replace("_", " ")
             
