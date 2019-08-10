@@ -80,7 +80,7 @@ class Runbook:
             print()
             
             # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.095), 0.95)
+            pause_time = max((len(step.description) * 0.095), 1.05)
             sleep(pause_time)
             
             # ask for input
@@ -96,8 +96,6 @@ class Runbook:
                 print("\n\tWhy not?")
                 reason = input("\t~> ").strip()
                 self._write_result(step, plain_response, negative=True, reason=reason)
-            
-        # TODO handle canceling input / sigtrap        
         
         print()
         return None
@@ -113,7 +111,7 @@ class Runbook:
             elif response in {"no", "n", "nope"}:
                 return False, response, plain_response
             else:
-                print("\tinvalid response\n")
+                print("\n\tinvalid response\n")
         
     
     def _get_steps(self) -> List[Step]:
