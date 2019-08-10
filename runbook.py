@@ -42,10 +42,13 @@ class Runbook:
         
         # check for existing steps
         if os.path.isfile(self.file_path):
+            print()
             print("(reading existing file...)")
             existing_steps = self._read_file(self.file_path)
+            resumed = True
         else:
             existing_steps = []
+            resumed = False
         
         current_existing_step = 0
         
@@ -63,7 +66,11 @@ class Runbook:
                 else:
                     print(f"(found new step '{step.name}')")
                     print()
-                        
+            
+            elif resumed is True:
+                print(f"(resuming from step '{step.name}')\n")
+                resumed = False
+            
             # print step information
             if step.description:
                 print(step.description)
@@ -73,7 +80,7 @@ class Runbook:
             print()
             
             # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.01), 1.5)
+            pause_time = max((len(step.description) * 0.095), 0.95)
             sleep(pause_time)
             
             # ask for input
@@ -106,7 +113,7 @@ class Runbook:
             elif response in {"no", "n", "nope"}:
                 return False, response, plain_response
             else:
-                print("\tinvalid response")
+                print("\tinvalid response\n")
         
     
     def _get_steps(self) -> List[Step]:
@@ -209,6 +216,8 @@ class Runbook:
             
             # write negative response line
             if negative is True:
-                file.write(f"\n> {reason}\n")
+                file.write("\n")
+                file.write("Reason given:\n")
+                file.write(f"> {reason}\n")
             
-            file.write("\n")
+            file.write("\n\n")
