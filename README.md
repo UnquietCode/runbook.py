@@ -1,6 +1,7 @@
 # runbook.py
 
-Inspired by [this blog post](https://blog.danslimmon.com/2019/07/15/do-nothing-scripting-the-key-to-gradual-automation) by Dan Slimmon.
+Inspired by [this blog post](https://blog.danslimmon.com/2019/07/15/do-nothing-scripting-the-key-to-gradual-automation)
+by Dan Slimmon.
 
 Define your own run-book in a class extending from `Runbook`. Every method that
 doesn't begin with an underscore is read in as a step to be completed, in order.
@@ -8,7 +9,7 @@ The step name will be built from the method name, and the description is taken
 either from the method's own docstring or from any data returned from invoking
 the method.
 
-```
+```python
 from runbook import Runbook
 
 
@@ -34,13 +35,14 @@ class CustomRunbook(Runbook):
 
 Every `Runbook` object comes with a default main method that you can use to execute the script.
 
-```
+```python
 if __name__ == '__main__':
     CustomRunbook.main()
 ```
 
 The run-book object can also be instantiated and run directly, like so:
-```
+
+```python
 book = CustomRunbook(file_path="path/to/file")
 book.run()
 ```
