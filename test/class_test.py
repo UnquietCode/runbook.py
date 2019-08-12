@@ -1,4 +1,4 @@
-from class_test_books import BookA, BookB
+from .class_test_books import BookA, BookB
 
 
 class BookC(BookB, BookA):
