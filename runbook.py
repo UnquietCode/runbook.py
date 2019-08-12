@@ -131,11 +131,57 @@ class Runbook:
                 return False, response, plain_response
             else:
                 print("\n\tinvalid response\n")
-        
     
     
     def _get_steps(self) -> List[Step]:
+        
+        # build up a list of steps
+        methods = self._get_ordered_methods()
+        steps:List[Step] = []
+        
+        for method_name, method in methods:
 
+            # check method name
+            if not re.match(r"^[a-zA-Z].*$", method_name):
+                continue
+                
+            if method_name in {'run', 'main'}:
+                continue
+
+            step_name = method_name.replace("_", " ")
+            
+            # if method is zero arg, call the unbound class method
+            # (as a convenience for @staticmethod)
+            function = method.__func__ if hasattr(method, '__func__') else method
+            function_signature = inspect.signature(function)
+            
+            if len(function_signature.parameters) == 0:
+                method = getattr(type(self), method_name)
+                
+            step_description = method()
+
+            if step_description is not None:
+                step_description = str(step_description)
+                step_description = textwrap.dedent(step_description).strip()
+            
+            # use docstring if empty
+            elif method.__doc__ is not None:
+                step_description = textwrap.dedent(method.__doc__).strip()
+            
+            # use empty string if still empty
+            else:
+                step_description = ""
+            
+            steps.append(Step(
+                name=step_name,
+                description=step_description,
+            ))
+        
+        return steps
+    
+    
+    def _get_ordered_methods(self):
+        
         # list class hierarchy, in order
         classes = list(inspect.getmro(type(self)))
         classes.reverse()
@@ -178,48 +224,7 @@ class Runbook:
         for a, b in all_methods_by_class.items():
             methods.extend(b)
         
-        # build up a list of steps
-        steps:List[Step] = []
-        
-        for method_name, method in methods:
-
-            # check method name
-            if not re.match(r"^[a-zA-Z].*$", method_name):
-                continue
-                
-            if method_name in {'run', 'main'}:
-                continue
-
-            step_name = method_name.replace("_", " ")
-            
-            # if method is zero arg, call the unbound class method
-            # (as a convenience for @staticmethod)
-            function = method.__func__ if hasattr(method, '__func__') else method
-            function_signature = inspect.signature(function)
-            
-            if len(function_signature.parameters) == 0:
-                method = getattr(type(self), method_name)
-                
-            step_description = method()
-
-            if step_description is not None:
-                step_description = str(step_description)
-                step_description = textwrap.dedent(step_description).strip()
-            
-            # use docstring if empty
-            elif method.__doc__ is not None:
-                step_description = textwrap.dedent(method.__doc__).strip()
-            
-            # use empty string if still empty
-            else:
-                step_description = ""
-            
-            steps.append(Step(
-                name=step_name,
-                description=step_description,
-            ))
-        
-        return steps
+        return methods
     
     
     @staticmethod
