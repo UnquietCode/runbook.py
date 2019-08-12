@@ -133,13 +133,50 @@ class Runbook:
                 print("\n\tinvalid response\n")
         
     
+    
     def _get_steps(self) -> List[Step]:
+
+        # list class hierarchy, in order
+        classes = list(inspect.getmro(type(self)))
+        classes.reverse()
         
-        # get all methods in the class
-        methods = inspect.getmembers(self, predicate=inspect.ismethod)
+        # list methods by class, in order
+        methods_by_class = {}
+        all_methods_by_class = {}
+        
+        for c in classes:
+            methods_by_class[c] = inspect.getmembers(c, lambda _:inspect.ismethod(_) or inspect.isfunction(_))
+            all_methods_by_class[c] = []
         
         # sort methods by declaration order
-        methods = sorted(methods, key=lambda _: _[1].__func__.__code__.co_firstlineno)
+        def key_filter(value):
+            value = value[1]
+            
+            if hasattr(value, '__func__'):
+                return value.__func__.__code__.co_firstlineno
+            else:
+                return value.__code__.co_firstlineno
+        
+        all_methods = inspect.getmembers(self, lambda _:inspect.ismethod(_) or inspect.isfunction(_))
+        all_methods = sorted(all_methods, key=key_filter)
+        
+        for n1, m1 in all_methods:
+            for clazz, class_methods in methods_by_class.items():
+                should_continue = True
+                
+                for n2, m2 in class_methods:
+                    if n1 == n2:
+                        all_methods_by_class[clazz].append((n1,m1))
+                        should_continue = False
+                        break
+            
+                if should_continue is False:
+                    break
+        
+        methods = []
+        
+        for a, b in all_methods_by_class.items():
+            methods.extend(b)
         
         # build up a list of steps
         steps:List[Step] = []
@@ -157,7 +194,8 @@ class Runbook:
             
             # if method is zero arg, call the unbound class method
             # (as a convenience for @staticmethod)
-            function_signature = inspect.signature(method.__func__)
+            function = method.__func__ if hasattr(method, '__func__') else method
+            function_signature = inspect.signature(function)
             
             if len(function_signature.parameters) == 0:
                 method = getattr(type(self), method_name)
@@ -210,6 +248,8 @@ class Runbook:
         
     
     def _write_result(self, step:Step, result, negative=False, reason=None):
+        
+        # open a file in unicode append mode
         with open(self.file_path, "a+") as file:
             
             # write name header
@@ -229,7 +269,11 @@ class Runbook:
                 file.write("\n")
             
             # write generic response line
-            file.write(f"responded `{result}` at {datetime.now().strftime('%H:%M:%S')} on {datetime.now().strftime('%d/%m/%Y')}\n")
+            file.write(
+                f"responded `{result}` "
+                f"at {datetime.now().strftime('%H:%M:%S')} "
+                f"on {datetime.now().strftime('%d/%m/%Y')}\n"
+            )
             
             # write negative response line
             if negative is True and reason:

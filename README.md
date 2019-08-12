@@ -40,19 +40,22 @@ if __name__ == '__main__':
     CustomRunbook.main()
 ```
 
-The run-book object can also be instantiated and run directly, like so:
+The run-book object can also be instantiated and run directly.
 
 ```python
 book = CustomRunbook(file_path="path/to/file")
 book.run()
 ```
 
-You should avoid using the step names `run` and `main`, which are already defined.
+**You should avoid using the step names `run` and `main`**, which are already defined. If you need to override these
+methods to define custom behavior that is fine.
 
-As steps are completed, the results are written out to a log file. You can set a custom log file path by passing an argument to main, as in:
+As steps are completed, the results are written out to a log file. You can set a custom log file path by passing
+an argument to main, as in:
 
 ```
 python3 my_runbook.py output.log
 ```
 
-When using the same log file, already completed steps will be skipped. Any new steps found in the `Runbook` class and not in the log will be processed.
+When reusing the same log file, already completed steps will be skipped. Any new steps found in the `Runbook`
+and not already in the log will be processed as normal, with results appended to the end of the log file.
