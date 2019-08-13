@@ -4,26 +4,10 @@ import sys
 import inspect
 import textwrap
 from typing import List
-from dataclasses import dataclass
 from time import sleep
 from datetime import datetime
 
-
-@dataclass(frozen=True)
-class Step:
-    name: str
-    description: str
-    display_name: str = None
-    skippable: bool = False
-    repeatable: bool = False
-    critical: bool = False
-    
-    @property
-    def preferred_name(self):
-        if self.display_name:
-            return self.display_name
-        else:
-            return self.name
+from .step import Step
 
 
 class Runbook:
@@ -163,7 +147,7 @@ class Runbook:
                 raise Exception('empty')
     
     
-    def _wait_for_response(self):
+    def _wait_for_response(self) -> bool:
         while True:
             plain_response = input("\t~> ").strip()
             response = plain_response.lower()
@@ -214,7 +198,7 @@ class Runbook:
             else:
                 step_description = ""
             
-            # handle customizations            
+            # handle customizations
             function_defaults = {
                 k: v.default
                 for k, v in function_signature.parameters.items()
