@@ -29,6 +29,7 @@ class CustomRunbook(Runbook):
         task = "reboot"
         return f"perform a {task}"
     
+    @staticmethod
     def last_step():
         """Everything ok?"""
 ```
@@ -48,7 +49,7 @@ book.run()
 ```
 
 **You should avoid using the step names `run` and `main`**, which are already defined. If you need to override these
-methods to define custom behavior that is fine.
+methods to define custom behavior then that is fine.
 
 As steps are completed, the results are written out to a log file. You can set a custom log file path by passing
 an argument to main, as in:
@@ -58,4 +59,4 @@ python3 my_runbook.py output.log
 ```
 
 When reusing the same log file, already completed steps will be skipped. Any new steps found in the `Runbook`
-and not already in the log will be processed as normal, with results appended to the end of the log file.
+and not already in the log will be processed as normal, with results appended to the end of the file.

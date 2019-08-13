@@ -13,6 +13,9 @@ from datetime import datetime
 class Step:
     name: str
     description: str
+    skippable: bool = False
+    repeatable: bool = False
+    critical: bool = False
 
 
 class Runbook:
@@ -28,7 +31,7 @@ class Runbook:
     def main(cls):
         
         if len(sys.argv) > 2:
-            print("usage: (log file path)")
+            print("usage: [log file path]")
             exit(1)
         
         elif len(sys.argv) > 1:
@@ -71,36 +74,63 @@ class Runbook:
         
         current_existing_step = 0
         
+        def increment_fn():
+            nonlocal current_existing_step
+            current_existing_step += 1
+            
         for step in self._get_steps():
             print()
-
-            # handle existing steps
-            if len(existing_steps) > current_existing_step:
-                existing_step = existing_steps[current_existing_step]
-                
-                if step.name == existing_step.name:
+            
+            self._run_step(
+                step=step,
+                existing_steps=existing_steps,
+                current_existing_step=current_existing_step,
+                resumed=resumed,
+                increment=increment_fn,
+            )
+            
+        print()
+        return None
+    
+    
+    def _run_step(self, step, existing_steps, current_existing_step, increment, resumed):
+        
+        # handle existing steps
+        if len(existing_steps) > current_existing_step:
+            existing_step = existing_steps[current_existing_step]
+            
+            if step.name == existing_step.name:
+                if step.repeatable is not True:
                     print(f"(skipping already completed step '{step.name}')")
-                    current_existing_step += 1
-                    continue
+                    increment()
+                    return
                 else:
-                    print(f"(found new step '{step.name}')")
-                    print()
-            
-            elif resumed is True:
-                print(f"(resuming from step '{step.name}')\n")
-                resumed = False
-            
-            # print step information
-            if step.description:
-                print(step.description)
+                    print(f"(repeating existing step '{step.name}')\n")
+                    increment()
             else:
-                print(step.name)
-            
-            print()
-            
-            # pause for some seconds to give time to read
-            pause_time = max((len(step.description) * 0.075), 1.05)
-            sleep(pause_time)
+                print(f"(found new step '{step.name}')\n")
+        
+        elif resumed is True:
+            print(f"(resuming from step '{step.name}')\n")
+            resumed = False
+        
+        # print step information
+        if step.description:
+            print(step.description)
+        else:
+            print(step.name)
+        
+        print()
+        
+        # pause for some seconds to give time to read
+        pause_time = max((len(step.description) * 0.075), 1.05)
+        sleep(pause_time)
+        
+        # response loop
+        repeat = True
+        
+        while repeat is True:
+            repeat = False
             
             # ask for input
             print("\tDid you do the thing?")
@@ -108,16 +138,21 @@ class Runbook:
 
             if sentiment is True:
                 self._write_result(step, plain_response)
-                continue
             
             # handle negative response
             elif sentiment is False:
-                print("\n\tWhy not?")
-                reason = input("\t~> ").strip()
-                self._write_result(step, plain_response, negative=True, reason=reason)
-        
-        print()
-        return None
+                if step.skippable is True  or  resumed is True:
+                    self._write_result(step, plain_response, negative=True, reason='skipped')
+                else:
+                    if step.critical is True:
+                        print("\n\tThis step MUST be completed!\n")
+                        repeat = True
+                    else:
+                        print("\n\tWhy not?")
+                        reason = input("\t~> ").strip()
+                        self._write_result(step, plain_response, negative=True, reason=reason)
+            else:
+                raise Exception('empty')
     
     
     def _wait_for_response(self):
@@ -149,15 +184,20 @@ class Runbook:
                 continue
 
             step_name = method_name.replace("_", " ")
-            
-            # if method is zero arg, call the unbound class method
-            # (as a convenience for @staticmethod)
             function = method.__func__ if hasattr(method, '__func__') else method
             function_signature = inspect.signature(function)
             
+            function_defaults = {
+                k: v.default
+                for k, v in function_signature.parameters.items()
+                if v.default is not inspect.Parameter.empty
+            }
+            
+            # if method is zero arg, call the unbound class method
+            # (as a convenience for @staticmethod)
             if len(function_signature.parameters) == 0:
                 method = getattr(type(self), method_name)
-                
+            
             step_description = method()
 
             if step_description is not None:
@@ -172,9 +212,24 @@ class Runbook:
             else:
                 step_description = ""
             
+            def get_default_value(name:str):
+                value = function_defaults.get(name, None)
+                value = False if value is None else value
+                return value
+            
+            repeatable = get_default_value('repeatable')
+            skippable = get_default_value('skippable')
+            critical = get_default_value('critical')
+            
+            # if skippable is True and critical is True:
+                # raise Exception(f"unsupported configuration for step '{step_name}': skippable steps cannot be critical")
+            
             steps.append(Step(
                 name=step_name,
                 description=step_description,
+                repeatable=repeatable,
+                skippable=skippable,
+                critical=critical,
             ))
         
         return steps
