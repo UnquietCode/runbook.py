@@ -18,7 +18,7 @@ class CustomRunbook(Runbook):
         return f"a custom {value}"
     
     
-    def last_step():
+    def last_step(name='the end'):
         pass
 
     

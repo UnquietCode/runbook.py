@@ -13,9 +13,17 @@ from datetime import datetime
 class Step:
     name: str
     description: str
+    display_name: str = None
     skippable: bool = False
     repeatable: bool = False
     critical: bool = False
+    
+    @property
+    def preferred_name(self):
+        if self.display_name:
+            return self.display_name
+        else:
+            return self.name
 
 
 class Runbook:
@@ -101,24 +109,24 @@ class Runbook:
             
             if step.name == existing_step.name:
                 if step.repeatable is not True:
-                    print(f"(skipping already completed step '{step.name}')")
+                    print(f"(skipping already completed step '{step.preferred_name}')")
                     increment()
                     return
                 else:
-                    print(f"(repeating existing step '{step.name}')\n")
+                    print(f"(repeating existing step '{step.preferred_name}')\n")
                     increment()
             else:
-                print(f"(found new step '{step.name}')\n")
+                print(f"(found new step '{step.preferred_name}')\n")
         
         elif resumed is True:
-            print(f"(resuming from step '{step.name}')\n")
+            print(f"(resuming from step '{step.preferred_name}')\n")
             resumed = False
         
         # print step information
         if step.description:
             print(step.description)
         else:
-            print(step.name)
+            print(step.preferred_name)
         
         print()
         
@@ -187,12 +195,6 @@ class Runbook:
             function = method.__func__ if hasattr(method, '__func__') else method
             function_signature = inspect.signature(function)
             
-            function_defaults = {
-                k: v.default
-                for k, v in function_signature.parameters.items()
-                if v.default is not inspect.Parameter.empty
-            }
-            
             # if method is zero arg, call the unbound class method
             # (as a convenience for @staticmethod)
             if len(function_signature.parameters) == 0:
@@ -212,6 +214,13 @@ class Runbook:
             else:
                 step_description = ""
             
+            # handle customizations            
+            function_defaults = {
+                k: v.default
+                for k, v in function_signature.parameters.items()
+                if v.default is not inspect.Parameter.empty
+            }
+            
             def get_default_value(name:str):
                 value = function_defaults.get(name, None)
                 value = False if value is None else value
@@ -220,6 +229,7 @@ class Runbook:
             repeatable = get_default_value('repeatable')
             skippable = get_default_value('skippable')
             critical = get_default_value('critical')
+            display_name = get_default_value('name')
             
             # if skippable is True and critical is True:
                 # raise Exception(f"unsupported configuration for step '{step_name}': skippable steps cannot be critical")
@@ -227,6 +237,7 @@ class Runbook:
             steps.append(Step(
                 name=step_name,
                 description=step_description,
+                display_name=display_name,
                 repeatable=repeatable,
                 skippable=skippable,
                 critical=critical,
