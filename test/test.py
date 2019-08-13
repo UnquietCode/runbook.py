@@ -2,7 +2,11 @@ from unquietcode.tools.runbook import Runbook
 
     
 class CustomRunbook(Runbook):
-   
+    """
+    This runbook is a basic example that exercises
+    the various options available.
+    """
+
     def first_step(self):
         """
         Do ABC now.

@@ -53,10 +53,16 @@ class Runbook:
     
         
     def run(self):
+        preamble = self._preamble()
         
+        if preamble:
+            print(preamble)
+
         # check for existing steps
         if os.path.isfile(self.file_path):
-            print()
+            if not preamble:
+                print()
+            
             print("(reading existing file...)")
             existing_steps = self._read_file(self.file_path)
             resumed = True
@@ -83,6 +89,20 @@ class Runbook:
             
         print()
         return None
+    
+    
+    def _preamble(self):
+        classes = list(inspect.getmro(type(self)))
+        
+        for clazz in classes:
+            if clazz is Runbook:
+                break
+            
+            if hasattr(clazz, '__doc__'):
+                docstring = clazz.__doc__
+                
+                if docstring:
+                    return docstring
     
     
     def _run_step(self, step, existing_steps, current_existing_step, increment, resumed):

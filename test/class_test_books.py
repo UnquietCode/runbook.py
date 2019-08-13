@@ -2,6 +2,9 @@ from unquietcode.tools.runbook import Runbook
 
 
 class BookA(Runbook):
+    """
+    Preamble
+    """
     
     def step_b1():
         pass
