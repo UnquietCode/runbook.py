@@ -83,8 +83,8 @@ class Runbook:
                 step=step,
                 existing_steps=existing_steps,
                 current_existing_step=current_existing_step,
-                resumed=resumed,
                 increment=increment_fn,
+                resumed=resumed,
             )
             
         print()
