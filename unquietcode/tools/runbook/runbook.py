@@ -3,20 +3,33 @@ import os
 import sys
 import inspect
 import textwrap
+import signal
 from typing import List
 from time import sleep
 from datetime import datetime
 
+from mdv import main as mdv
+
 from .step import Step
+
+# setup a signal handler for better output
+def signal_handler(sig, frame):
+    sleep(0.15)
+    print('\n')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 def print_markdown(text):
-    from mdv import main as mdv
     print(mdv(md=text, theme='921.2332').strip())
 
 
+def bold(text):
+    return f"\x1B[1m{text}\x1B[0m"
+
 def italics(text):
-    return f"\x1B[3m{text}\x1B[23m"
+    return f"\x1B[3m{text}\x1B[0m"
 
 
 class Runbook:
@@ -127,7 +140,7 @@ class Runbook:
         print()
         
         def print_title():
-            print(f"{step.preferred_name}")
+            print(f"{bold(step.preferred_name)}")
             print(f"{'-'*len(step.preferred_name)}---\n")
         
         # handle existing steps
@@ -135,7 +148,7 @@ class Runbook:
             existing_step = existing_steps_by_name[step.name]
             
             if step.repeatable is not True:
-                print(f"(skipping already completed step '{step.preferred_name}')")
+                print(f"({italics('skipping already completed step')} '{step.preferred_name}')")
                 return
             else:
                 print(f"({italics('repeating existing step')} '{step.preferred_name}')\n\n")
