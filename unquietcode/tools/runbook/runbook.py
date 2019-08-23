@@ -129,10 +129,11 @@ class Runbook:
         
         elif resumed[0] is True:
             print(f"(resuming from step '{step.preferred_name}')\n")
+            print(f"{step.preferred_name}\n{'-'*len(step.preferred_name)}---\n")
             resumed[0] = False
         
         else:
-            print(f"## {step.preferred_name}\n")
+            print(f"{step.preferred_name}\n{'-'*len(step.preferred_name)}---\n")
         
         # print step information
         if step.description:
