@@ -53,6 +53,17 @@ class Runbook:
     
         
     def run(self):
+        
+        # title
+        class_name = type(self).__name__
+        
+        print()
+        print(f"\t======={'='*len(class_name)}=======")
+        print(f"\t       {class_name}       ")
+        print(f"\t======={'='*len(class_name)}=======")
+        print()
+        
+        # preamble
         preamble = self._preamble()
         
         if preamble:
@@ -60,7 +71,9 @@ class Runbook:
 
         # check for existing steps
         if os.path.isfile(self.file_path):
-            if not preamble:
+            print()
+            
+            if preamble:
                 print()
             
             print("(reading existing file...)")
@@ -88,6 +101,8 @@ class Runbook:
             )
             
         print()
+        print("\nAll steps completed.\n")
+        
         return None
     
     
@@ -102,10 +117,11 @@ class Runbook:
                 docstring = clazz.__doc__
                 
                 if docstring:
-                    return docstring
+                    return textwrap.dedent(docstring).strip()
     
     
     def _run_step(self, step, existing_steps, current_existing_step, increment, resumed):
+        print()
         
         # handle existing steps
         if len(existing_steps) > current_existing_step:
@@ -135,7 +151,8 @@ class Runbook:
         print()
         
         # pause for some seconds to give time to read
-        pause_time = max((len(step.description) * 0.075), 1.05)
+        pause_time = 0.0245 * (len(step.description) / 1 + len(step.description))
+        pause_time = max(pause_time, 1.05)
         sleep(pause_time)
         
         # response loop
@@ -235,8 +252,8 @@ class Runbook:
             critical = get_default_value('critical')
             display_name = get_default_value('name')
             
-            # if skippable is True and critical is True:
-                # raise Exception(f"unsupported configuration for step '{step_name}': skippable steps cannot be critical")
+            if skippable is True and critical is True:
+                raise Exception(f"unsupported configuration for step '{step_name}': skippable steps cannot be critical")
             
             steps.append(Step(
                 name=step_name,
