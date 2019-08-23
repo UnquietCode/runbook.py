@@ -78,25 +78,19 @@ class Runbook:
             
             print("(reading existing file...)")
             existing_steps = self._read_file(self.file_path)
-            resumed = True
+            resumed = [True]
         else:
             existing_steps = []
-            resumed = False
+            resumed = [False]
         
-        current_existing_step = 0
+        existing_steps_by_name = { _.name : _ for _ in existing_steps }
         
-        def increment_fn():
-            nonlocal current_existing_step
-            current_existing_step += 1
-            
         for step in self._get_steps():
             print()
             
             self._run_step(
                 step=step,
-                existing_steps=existing_steps,
-                current_existing_step=current_existing_step,
-                increment=increment_fn,
+                existing_steps_by_name=existing_steps_by_name,
                 resumed=resumed,
             )
             
@@ -120,27 +114,25 @@ class Runbook:
                     return textwrap.dedent(docstring).strip()
     
     
-    def _run_step(self, step, existing_steps, current_existing_step, increment, resumed):
+    def _run_step(self, step, existing_steps_by_name, resumed):
         print()
         
         # handle existing steps
-        if len(existing_steps) > current_existing_step:
-            existing_step = existing_steps[current_existing_step]
+        if step.name in existing_steps_by_name:
+            existing_step = existing_steps_by_name[step.name]
             
-            if step.name == existing_step.name:
-                if step.repeatable is not True:
-                    print(f"(skipping already completed step '{step.preferred_name}')")
-                    increment()
-                    return
-                else:
-                    print(f"(repeating existing step '{step.preferred_name}')\n")
-                    increment()
+            if step.repeatable is not True:
+                print(f"(skipping already completed step '{step.preferred_name}')")
+                return
             else:
-                print(f"(found new step '{step.preferred_name}')\n")
+                print(f"(repeating existing step '{step.preferred_name}')\n")
         
-        elif resumed is True:
+        elif resumed[0] is True:
             print(f"(resuming from step '{step.preferred_name}')\n")
-            resumed = False
+            resumed[0] = False
+        
+        else:
+            print(f"## {step.preferred_name}\n")
         
         # print step information
         if step.description:
