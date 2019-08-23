@@ -1,24 +1,16 @@
 import re
 import os
-import sys
 import inspect
 import textwrap
-import signal
 from typing import List
 from time import sleep
 from datetime import datetime
 
 from mdv import main as mdv
 
+from .cli import main as cli
 from .step import Step
 
-# setup a signal handler for better output
-def signal_handler(sig, frame):
-    sleep(0.15)
-    print('\n')
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
 
 
 def print_markdown(text):
@@ -43,15 +35,9 @@ class Runbook:
     
     @classmethod
     def main(cls):
-        
-        if len(sys.argv) > 2:
-            print("usage: [log file path]")
-            exit(1)
-        
-        elif len(sys.argv) > 1:
-            file_name = sys.argv[1]
-        
-        else:
+        file_name = cli(standalone_mode=False)
+
+        if not file_name:
             
             # split by capital letters and add underscore
             pretty_class_name = re.sub(
@@ -69,7 +55,6 @@ class Runbook:
         # set file path relative to current script working directory
         file_path = f"{os.getcwd()}/{file_name}"
         
-        # TODO use optparse, sys to get sole filename as input
         instance = cls(file_path=file_path)
         instance.run()
     
