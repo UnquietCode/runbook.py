@@ -10,6 +10,15 @@ from datetime import datetime
 from .step import Step
 
 
+def print_markdown(text):
+    from mdv import main as mdv
+    print(mdv(md=text, theme='921.2332').strip())
+
+
+def italics(text):
+    return f"\x1B[3m{text}\x1B[23m"
+
+
 class Runbook:
     
     def __init__(self, file_path):
@@ -67,7 +76,7 @@ class Runbook:
         preamble = self._preamble()
         
         if preamble:
-            print(preamble)
+            print_markdown(preamble)
 
         # check for existing steps
         if os.path.isfile(self.file_path):
@@ -117,6 +126,10 @@ class Runbook:
     def _run_step(self, step, existing_steps_by_name, resumed):
         print()
         
+        def print_title():
+            print(f"{step.preferred_name}")
+            print(f"{'-'*len(step.preferred_name)}---\n")
+        
         # handle existing steps
         if step.name in existing_steps_by_name:
             existing_step = existing_steps_by_name[step.name]
@@ -125,19 +138,20 @@ class Runbook:
                 print(f"(skipping already completed step '{step.preferred_name}')")
                 return
             else:
-                print(f"(repeating existing step '{step.preferred_name}')\n")
+                print(f"({italics('repeating existing step')} '{step.preferred_name}')\n\n")
+                print_title()
         
         elif resumed[0] is True:
-            print(f"(resuming from step '{step.preferred_name}')\n")
-            print(f"{step.preferred_name}\n{'-'*len(step.preferred_name)}---\n")
+            print(f"({italics('resuming from step')} '{step.preferred_name}')\n\n")
+            print_title()
             resumed[0] = False
         
         else:
-            print(f"{step.preferred_name}\n{'-'*len(step.preferred_name)}---\n")
+            print_title()
         
         # print step information
         if step.description:
-            print(step.description)
+            print_markdown(step.description)
         else:
             print(step.preferred_name)
         
