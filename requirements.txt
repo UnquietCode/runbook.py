@@ -1,2 +1,2 @@
-mdv >= 1.7
+git+https://github.com/axiros/terminal_markdown_viewer.git#80f333ba51dc2f1dfa854e203d3374a112aecbd3
 click >= 7.0

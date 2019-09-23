@@ -1,7 +1,10 @@
 import re
 import os
+import sys
+import select
 import inspect
 import textwrap
+from threading import Thread
 from typing import List
 from time import sleep
 from datetime import datetime
@@ -40,16 +43,23 @@ class Runbook:
         if not file_name:
             
             # split by capital letters and add underscore
+            pretty_class_name = cls.__name__
+            
+            # before a capital letter not preceded by a capital letter
             pretty_class_name = re.sub(
-                string=cls.__name__,
-                pattern=r'([A-Z])',
-                repl='_\\1',
-            ).lower()
+                string=pretty_class_name,
+                pattern=r'([^A-Z])([A-Z])',
+                repl='\\1_\\2',
+            )
             
-            # handles "ACustomClass" name strings
-            if pretty_class_name.startswith('_'):
-                pretty_class_name = pretty_class_name[1:]
+            # before a capital letter preceded by a capital letter but followed by lowercase
+            pretty_class_name = re.sub(
+                string=pretty_class_name,
+                pattern=r'([A-Z])([A-Z])([^A-Z])',
+                repl='\\1_\\2\\3',
+            )
             
+            pretty_class_name = pretty_class_name.lower()
             file_name = f"{pretty_class_name}.log"
         
         # set file path relative to current script working directory
@@ -68,7 +78,7 @@ class Runbook:
         print(f"\t======={'='*len(class_name)}=======")
         print(f"\t       {class_name}       ")
         print(f"\t======={'='*len(class_name)}=======")
-        print()
+        # print()
         
         # preamble
         preamble = self._preamble()
@@ -83,7 +93,7 @@ class Runbook:
             if preamble:
                 print()
             
-            print("(reading existing file...)")
+            print(f"({italics('reading existing file')}...)")
             existing_steps = self._read_file(self.file_path)
             resumed = [True]
         else:
@@ -156,9 +166,17 @@ class Runbook:
         print()
         
         # pause for some seconds to give time to read
-        pause_time = 0.0245 * (len(step.description) / 1 + len(step.description))
+        pause_time = 0.01 * (len(step.description) / 1 + len(step.description))
         pause_time = max(pause_time, 1.05)
-        sleep(pause_time)
+        
+        if pause_time > 3.0:
+            sleep(2.3)
+            print(f"({italics('press Enter to stop waiting')})")
+            
+            wait_time = pause_time - 2.3
+            self._wait_for_enter_key(wait=wait_time)
+        else:
+            sleep(pause_time)
         
         # response loop
         repeat = True
@@ -200,6 +218,41 @@ class Runbook:
                 return False, response, plain_response
             else:
                 print("\n\tinvalid response\n")
+    
+    
+    def _wait_for_enter_key(self, wait) -> None:
+        stop_waiting = False
+        key_received = False
+        
+        def waiter_parent_thread_fn():
+            def keyboard_waiter_fn():
+                nonlocal stop_waiting
+                
+                while not stop_waiting:
+                    i, o, e = select.select( [sys.stdin], [], [], 10 )
+                    
+                    if i:
+                        sys.stdin.read(1)
+                        stop_waiting = True
+                
+            def timeout_waiter_fn():
+                nonlocal stop_waiting
+                
+                sleep(wait)
+                stop_waiting = True
+            
+            keyboard_waiter = Thread(target=keyboard_waiter_fn, daemon=True)
+            timeout_waiter_fn = Thread(target=timeout_waiter_fn, daemon=True)
+            
+            keyboard_waiter.start()
+            timeout_waiter_fn.start()
+            
+            while not stop_waiting:
+                sleep(0.075)
+        
+        waiter_parent_thread = Thread(target=waiter_parent_thread_fn, daemon=True)
+        waiter_parent_thread.start()
+        waiter_parent_thread.join()
     
     
     def _get_steps(self) -> List[Step]:
