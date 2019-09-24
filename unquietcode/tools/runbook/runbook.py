@@ -36,29 +36,35 @@ class Runbook:
         self.file_path = file_path
     
     
+    @staticmethod
+    def _make_pretty_name(class_name):
+        
+        # split by capital letters and add underscore
+        pretty_class_name = class_name
+        
+        # before a capital letter not preceded by a capital letter
+        pretty_class_name = re.sub(
+            string=pretty_class_name,
+            pattern=r'([^A-Z])([A-Z])',
+            repl='\\1_\\2',
+        )
+        
+        # before a capital letter preceded by a capital letter but followed by lowercase
+        pretty_class_name = re.sub(
+            string=pretty_class_name,
+            pattern=r'([A-Z])([A-Z])([^A-Z])',
+            repl='\\1_\\2\\3',
+        )
+        
+        return pretty_class_name
+
+    
     @classmethod
     def main(cls):
         file_name = cli(standalone_mode=False)
 
         if not file_name:
-            
-            # split by capital letters and add underscore
-            pretty_class_name = cls.__name__
-            
-            # before a capital letter not preceded by a capital letter
-            pretty_class_name = re.sub(
-                string=pretty_class_name,
-                pattern=r'([^A-Z])([A-Z])',
-                repl='\\1_\\2',
-            )
-            
-            # before a capital letter preceded by a capital letter but followed by lowercase
-            pretty_class_name = re.sub(
-                string=pretty_class_name,
-                pattern=r'([A-Z])([A-Z])([^A-Z])',
-                repl='\\1_\\2\\3',
-            )
-            
+            pretty_class_name = cls._make_pretty_name(cls.__name__)
             pretty_class_name = pretty_class_name.lower()
             file_name = f"{pretty_class_name}.log"
         
@@ -72,12 +78,17 @@ class Runbook:
     def run(self):
         
         # title
-        class_name = type(self).__name__
+        pretty_class_name = self._make_pretty_name(type(self).__name__)
+        pretty_class_name = re.sub(
+            string=pretty_class_name,
+            pattern=r'_',
+            repl=' ',
+        )
         
         print()
-        print(f"\t======={'='*len(class_name)}=======")
-        print(f"\t       {class_name}       ")
-        print(f"\t======={'='*len(class_name)}=======")
+        print(f"\t======={'='*len(pretty_class_name)}=======")
+        print(f"\t       {pretty_class_name}       ")
+        print(f"\t======={'='*len(pretty_class_name)}=======")
         # print()
         
         # preamble
@@ -171,7 +182,7 @@ class Runbook:
         
         if pause_time > 3.0:
             sleep(2.3)
-            print(f"({italics('press Enter to stop waiting')})")
+            print(f"({italics('press Enter to continue')})")
             
             wait_time = pause_time - 2.3
             self._wait_for_enter_key(wait=wait_time)
@@ -207,14 +218,23 @@ class Runbook:
                 raise Exception('empty')
     
     
+    @staticmethod
+    def _matches_any(test, regexes):
+        for regex in regexes:
+            if re.match(regex, test):
+                return True
+        
+        return False
+    
+    
     def _wait_for_response(self) -> bool:
         while True:
             plain_response = input("\t~> ").strip()
             response = plain_response.lower()
             
-            if response in {"yes", "y", "yep"}:
+            if self._matches_any(response, ["yes+", "y", "yep", "yu+rp", 'yeah+']):
                 return True, response, plain_response
-            elif response in {"no", "n", "nope"}:
+            elif self._matches_any(response, ["no+", "n", "nope"]):
                 return False, response, plain_response
             else:
                 print("\n\tinvalid response\n")
@@ -222,37 +242,27 @@ class Runbook:
     
     def _wait_for_enter_key(self, wait) -> None:
         stop_waiting = False
-        key_received = False
         
-        def waiter_parent_thread_fn():
-            def keyboard_waiter_fn():
-                nonlocal stop_waiting
+        def waiter_fn():
+            nonlocal stop_waiting
+            
+            sleep(wait)
+            stop_waiting = True
+        
+        waiter_thread = Thread(target=waiter_fn, daemon=True)
+        waiter_thread.start()
+        
+        while not stop_waiting:
+            input_, output_, exception_ = select.select([sys.stdin], [], [], 0.075)
+
+            if input_:
+                x = 'true'
                 
-                while not stop_waiting:
-                    i, o, e = select.select( [sys.stdin], [], [], 10 )
-                    
-                    if i:
-                        sys.stdin.read(1)
-                        stop_waiting = True
+                # wipe out the buffer
+                while x.strip():
+                    x = sys.stdin.read(1)
                 
-            def timeout_waiter_fn():
-                nonlocal stop_waiting
-                
-                sleep(wait)
                 stop_waiting = True
-            
-            keyboard_waiter = Thread(target=keyboard_waiter_fn, daemon=True)
-            timeout_waiter_fn = Thread(target=timeout_waiter_fn, daemon=True)
-            
-            keyboard_waiter.start()
-            timeout_waiter_fn.start()
-            
-            while not stop_waiting:
-                sleep(0.075)
-        
-        waiter_parent_thread = Thread(target=waiter_parent_thread_fn, daemon=True)
-        waiter_parent_thread.start()
-        waiter_parent_thread.join()
     
     
     def _get_steps(self) -> List[Step]:
@@ -422,7 +432,7 @@ class Runbook:
             file.write(
                 f"responded `{result}` "
                 f"at {datetime.now().strftime('%H:%M:%S')} "
-                f"on {datetime.now().strftime('%d/%m/%Y')}\n"
+                f"on {datetime.now().strftime('%Y-%m-%d')}\n"
             )
             
             # write negative response line
