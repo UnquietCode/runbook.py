@@ -61,3 +61,6 @@ python3 my_runbook.py output.log
 
 When reusing the same log file, already completed steps will be skipped. Any new steps found in the `Runbook`
 and not already in the log will be processed as normal, with results appended to the end of the file.
+
+### License
+Licensed under the Apache Software License 2.0 (ASL 2.0).
