@@ -16,7 +16,10 @@ from .step import Step
 
 
 def print_markdown(text):
-    print(mdv(md=text, theme='921.2332').strip())
+    text = re.sub(r'\r\n', '\n', text)
+    print(text)
+    # text = re.sub(r'\n\n', '\n', text)
+    # print(mdv(md=text, theme='921.2332'))
 
 
 def bold(text):
@@ -88,12 +91,12 @@ class Runbook:
         print(f"\t======={'='*len(pretty_class_name)}=======")
         print(f"\t       {pretty_class_name}       ")
         print(f"\t======={'='*len(pretty_class_name)}=======")
-        # print()
         
         # preamble
         preamble = self._preamble()
         
         if preamble:
+            print()
             print_markdown(preamble)
 
         # check for existing steps
@@ -393,7 +396,7 @@ class Runbook:
             if step.description:
                 file.write("\n```\n")
                 file.write(step.description)
-                file.write("\n```\n\n")
+                file.write("\n```\n")
             else:
                 file.write("\n")
             

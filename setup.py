@@ -3,9 +3,6 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setuptools.setup(
     name="runbook",
     version="0.1",
@@ -17,8 +14,11 @@ setuptools.setup(
     url="https://github.com/UnquietCode/runbook.py",
     keywords="runbook playbook process",
     packages=setuptools.find_namespace_packages(exclude=['test']),
-    install_requires=requirements,
-    license='OSI Approved :: Apache Software License'
+    install_requires=[
+        'mdv == 1.7.4',  # must install from commit 80f333ba
+        'click >= 7.0',
+    ],
+    license='OSI Approved :: Apache Software License',
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
