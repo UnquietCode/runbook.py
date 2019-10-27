@@ -4,7 +4,6 @@ import sys
 import select
 import inspect
 import textwrap
-from threading import Thread
 from typing import List
 from time import sleep
 from datetime import datetime
@@ -123,7 +122,7 @@ class Runbook:
             )
             
         print()
-        print("\nAll steps completed.\n")
+        print("\nAll steps completed!\n")
         
         return None
     
@@ -177,17 +176,12 @@ class Runbook:
         print()
         
         # pause for some seconds to give time to read
-        pause_time = 0.01 * (len(step.description) / 1 + len(step.description))
-        pause_time = max(pause_time, 1.05)
+        pause_time = 0.01 * (len(step.description) / 1.0 + len(step.description))
+        pause_time = max(pause_time, 1.10)
+        pause_time = min(pause_time, 5.95)
         
-        if pause_time > 3.0:
-            sleep(2.3)
-            print(f"({italics('press Enter to continue')})")
-            
-            wait_time = pause_time - 2.3
-            self._wait_for_enter_key(wait=wait_time)
-        else:
-            sleep(pause_time)
+        # wait before prompting
+        sleep(pause_time)
         
         # response loop
         repeat = True
@@ -221,7 +215,7 @@ class Runbook:
     @staticmethod
     def _matches_any(test, regexes):
         for regex in regexes:
-            if re.match(regex, test):
+            if re.match(f"^{regex}$", test):
                 return True
         
         return False
@@ -232,37 +226,12 @@ class Runbook:
             plain_response = input("\t~> ").strip()
             response = plain_response.lower()
             
-            if self._matches_any(response, ["yes+", "y", "yep", "yu+rp", 'yeah+']):
+            if self._matches_any(response, ["yes+", "y", "yep", "yu+rp", "yeah+", "yar+", 'yessir']):
                 return True, response, plain_response
-            elif self._matches_any(response, ["no+", "n", "nope"]):
+            elif self._matches_any(response, ["no+", "n", "nope", "nay", "neurp"]):
                 return False, response, plain_response
             else:
                 print("\n\tinvalid response\n")
-    
-    
-    def _wait_for_enter_key(self, wait) -> None:
-        stop_waiting = False
-        
-        def waiter_fn():
-            nonlocal stop_waiting
-            
-            sleep(wait)
-            stop_waiting = True
-        
-        waiter_thread = Thread(target=waiter_fn, daemon=True)
-        waiter_thread.start()
-        
-        while not stop_waiting:
-            input_, output_, exception_ = select.select([sys.stdin], [], [], 0.075)
-
-            if input_:
-                x = 'true'
-                
-                # wipe out the buffer
-                while x.strip():
-                    x = sys.stdin.read(1)
-                
-                stop_waiting = True
     
     
     def _get_steps(self) -> List[Step]:
@@ -424,15 +393,17 @@ class Runbook:
             if step.description:
                 file.write("\n```\n")
                 file.write(step.description)
-                file.write("\n```\n")
+                file.write("\n```\n\n")
             else:
                 file.write("\n")
             
             # write generic response line
+            now = datetime.now()
+            
             file.write(
                 f"responded `{result}` "
-                f"at {datetime.now().strftime('%H:%M:%S')} "
-                f"on {datetime.now().strftime('%Y-%m-%d')}\n"
+                f"at {now.hour}:{now.strftime('%M:%S')} "
+                f"on {now.strftime('%d/%m/%Y')}\n"
             )
             
             # write negative response line
