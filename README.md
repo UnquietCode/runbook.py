@@ -1,4 +1,4 @@
-# runbook.py (v0.1)
+# runbook.py (v0.2)
 `pip3 install runbook`
 
 Inspired by [this blog post](https://blog.danslimmon.com/2019/07/15/do-nothing-scripting-the-key-to-gradual-automation)

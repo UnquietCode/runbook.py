@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="runbook",
-    version="0.1",
+    version="0.2",
     description="a tool for defining repeatable processes in code",
     author="Benjamin Fagin",
     author_email="blouis@unquietcode.com",

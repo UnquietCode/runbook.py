@@ -22,12 +22,11 @@ def print_markdown(text):
     # text = re.sub(r'\n\n', '\n', text)
     # print(mdv(md=text, theme='921.2332'))
 
-
 def bold(text):
-    return f"\x1B[1m{text}\x1B[0m"
+    return render_markdown(f"__{text}__").strip()
 
 def italics(text):
-    return f"\x1B[3m{text}\x1B[0m"
+    return render_markdown(f"_{text}_").strip()
 
 
 class Runbook:
