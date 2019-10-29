@@ -16,6 +16,7 @@ setuptools.setup(
     packages=setuptools.find_namespace_packages(exclude=['test']),
     install_requires=[
         'mdv == 1.7.4',  # must install from commit 80f333ba
+        'markt == 0.0',  # must install from repo
         'click >= 7.0',
     ],
     license='OSI Approved :: Apache Software License',

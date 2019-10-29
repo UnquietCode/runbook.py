@@ -1,5 +1,5 @@
 import click
-import mdv
+from unquietcode.tools.markt import render_markdown
 
 from unquietcode.tools.runbook import create_new_runbook
 
@@ -30,7 +30,10 @@ def show(filename):
     """
     render the contents of a log file in the terminal
     """
-    rendered = mdv.main(filename=filename, theme='921.2332')
+    with open(filename) as file_:
+        text = file_.read()
+    
+    rendered = render_markdown(text)
     print(rendered)
     
 

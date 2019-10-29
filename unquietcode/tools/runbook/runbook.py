@@ -8,7 +8,7 @@ from typing import List
 from time import sleep
 from datetime import datetime
 
-from mdv import main as mdv
+from unquietcode.tools.markt import render_markdown
 
 from .cli import main as cli
 from .step import Step
@@ -17,7 +17,8 @@ from .step import Step
 
 def print_markdown(text):
     text = re.sub(r'\r\n', '\n', text)
-    print(text)
+    text = render_markdown(text)
+    print(text.strip())
     # text = re.sub(r'\n\n', '\n', text)
     # print(mdv(md=text, theme='921.2332'))
 
